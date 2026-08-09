@@ -14,6 +14,7 @@ import { iife } from "../../../util/iife"
 import { fail } from "../../effect-cmd"
 import { InstanceRef } from "@/effect/instance-ref"
 import type { InstanceContext } from "@/project/instance-context"
+import { suggestTools, formatSuggestions } from "../../../tool/suggestions"
 
 export const debugAgent = Effect.fn("Cli.debug.agent")(function* (args: {
   name: string
@@ -43,7 +44,6 @@ const run = Effect.fn("Cli.debug.agent.body")(function* (
   if (toolID) {
     const tool = availableTools.find((item) => item.id === toolID)
     if (!tool) {
-      const { suggestTools, formatSuggestions } = await import("../../tool/suggestions")
       const allToolNames = availableTools.map((t) => t.id)
       const suggestions = suggestTools(toolID, allToolNames)
       const errorMessage =
