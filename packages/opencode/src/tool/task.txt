@@ -11,7 +11,19 @@ When NOT to use the Task tool:
 
 Usage notes:
 1. Launch multiple agents concurrently whenever possible, to maximize performance; to do that, use a single message with multiple tool uses
-2. Once you have delegated work to an agent, do not duplicate that work yourself. Continue with non-overlapping tasks, or wait for the result. For background tasks, you will be notified automatically when the result is ready.
+2. Once you have delegated work to an agent, do not duplicate that work yourself.
+
+   For background tasks (background=true):
+   - You will be notified automatically when it completes via a system message in a future turn
+   - DO NOT sleep, poll, check status repeatedly, or ask the task for progress updates
+   - DO NOT duplicate its work - continue with non-overlapping tasks or briefly tell the user what you launched and end your response
+   - Use task_status(task_id) ONCE if you genuinely need current state before deciding your next action
+   - Use task_cancel(task_id) if you need to stop it
+   - Use task_steer(task_id, message) to send mid-flight guidance
+
+   For foreground tasks (background=false or omitted):
+   - The result is returned immediately in this turn
+   - You have the full output to work with right away
 3. When the agent is done, it will return a single message back to you. The result returned by the agent is not visible to the user. To show the user the result, you should send a text message back to the user with a concise summary of the result. The output includes a task_id you can reuse later to continue the same subagent session.
 4. Each agent invocation starts with a fresh context unless you provide task_id to resume the same subagent session (which continues with its previous messages and tool outputs). When starting fresh, your prompt should contain a highly detailed task description for the agent to perform autonomously and you should specify exactly what information the agent should return back to you in its final and only message to you.
 5. The agent's outputs should generally be trusted

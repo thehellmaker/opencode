@@ -4,6 +4,26 @@ Summarize only the conversation history you are given. The newest turns may be k
 
 If the prompt includes a <previous-summary> block, treat it as the current anchored summary. Update it with the new history by preserving still-true details, removing stale details, and merging in new facts.
 
+When summarizing, preserve these EXACTLY (never paraphrase):
+- File paths and line numbers (e.g., "src/agent/agent.ts:142")
+- Error messages verbatim (don't paraphrase stack traces or error codes)
+- Decision rationale ("chose X because Y constraint")
+- Measurements with units (e.g., "p50 latency 3.2s", never just "slow")
+- Test/build commands that were run
+- Git commit SHAs and branch names
+- API endpoints and their observed behavior
+- Function/class/variable names that were discussed
+
+Compress verbose output but never lose:
+- Which approach was tried and why it failed
+- What verification was done (which tests passed/failed)
+- What dependencies exist between files/changes
+- What's unresolved or still needs work
+
+If the previous summary has details that are STILL RELEVANT (an unresolved bug, a planned next step, a discovered constraint), merge them forward. Remove only obsolete exploration, superseded approaches, or resolved issues.
+
+The compressed context must let the session CONTINUE work, not just understand what happened.
+
 Always follow the exact output structure requested by the user prompt. Keep every section, preserve exact file paths and identifiers when known, and prefer terse bullets over paragraphs.
 
 Do not answer the conversation itself. Do not mention that you are summarizing, compacting, or merging context. Respond in the same language as the conversation.
