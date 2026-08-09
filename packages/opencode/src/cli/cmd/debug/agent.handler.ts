@@ -43,7 +43,14 @@ const run = Effect.fn("Cli.debug.agent.body")(function* (
   if (toolID) {
     const tool = availableTools.find((item) => item.id === toolID)
     if (!tool) {
-      process.stderr.write(`Tool ${toolID} not found for agent ${agentName}` + EOL)
+      const { suggestTools, formatSuggestions } = await import("../../tool/suggestions")
+      const allToolNames = availableTools.map((t) => t.id)
+      const suggestions = suggestTools(toolID, allToolNames)
+      const errorMessage =
+        suggestions.length > 0
+          ? formatSuggestions(toolID, suggestions) + ` for agent ${agentName}`
+          : `Tool ${toolID} not found for agent ${agentName}`
+      process.stderr.write(errorMessage + EOL)
       return yield* fail("", 1)
     }
     if (resolvedTools[toolID] === false) {

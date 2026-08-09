@@ -7,6 +7,7 @@ import type { Permission } from "../permission"
 import type { SessionID, MessageID } from "../session/schema"
 import * as Truncate from "./truncate"
 import { Agent } from "@/agent/agent"
+import { verifyDeterminism, isDeterministicTool } from "./determinism"
 
 interface Metadata {
   [key: string]: any
@@ -128,6 +129,12 @@ function wrap<Parameters extends Schema.Decoder<unknown>, Result extends Metadat
             ),
           )
           const result = yield* execute(decoded as Schema.Schema.Type<Parameters>, ctx)
+
+          // Verify determinism for applicable tools
+          if (isDeterministicTool(id)) {
+            yield* Effect.promise(() => verifyDeterminism(id, decoded, result))
+          }
+
           if (result.metadata.truncated !== undefined) {
             return result
           }
