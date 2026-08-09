@@ -13,6 +13,7 @@ import { TaskTool } from "./task"
 import { TaskStatusTool } from "./task-status"
 import { TaskCancelTool } from "./task-cancel"
 import { TaskSteerTool } from "./task-steer"
+import { GoalTool, GoalStatusTool, GoalStopTool } from "./goal"
 import { Database } from "@opencode-ai/core/database/database"
 import { TodoWriteTool } from "./todo"
 import { WebFetchTool } from "./webfetch"
@@ -219,6 +220,9 @@ const layer = Layer.effect(
           taskStatus: Tool.init(taskStatus),
           taskCancel: Tool.init(taskCancel),
           taskSteer: Tool.init(taskSteer),
+          goal: Tool.init(yield* GoalTool),
+          goalStatus: Tool.init(yield* GoalStatusTool),
+          goalStop: Tool.init(yield* GoalStopTool),
           fetch: Tool.init(webfetch),
           todo: Tool.init(todo),
           search: Tool.init(websearch),
@@ -245,6 +249,9 @@ const layer = Layer.effect(
             tool.taskStatus,
             tool.taskCancel,
             tool.taskSteer,
+            tool.goal,
+            tool.goalStatus,
+            tool.goalStop,
             tool.fetch,
             tool.todo,
             tool.search,

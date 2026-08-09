@@ -1,0 +1,80 @@
+Set a goal for autonomous work. The agent will continue working toward the goal until verification passes or turn limit is reached.
+
+## When to use
+
+Use when:
+- The task requires multiple attempts or iterations to complete
+- Success can be verified programmatically (shell command, tests, server response)
+- You want the agent to work autonomously until the goal is met
+- The task has clear success criteria
+
+Examples:
+- "Fix all failing tests" → goal("make tests pass", { gate: "npm test" })
+- "Deploy and verify staging" → goal("staging is healthy", { gate: "curl -f https://staging.app.com/health" })
+- "Reduce bundle size below 500KB" → goal("bundle under 500KB", { gate: "[ $(stat -f%z dist/bundle.js) -lt 512000 ]" })
+
+## How it works
+
+1. Set goal with criteria and verification method
+2. Agent works toward goal (fixes tests, optimizes code, etc.)
+3. After each turn, automatic verification runs
+4. If goal not met: agent continues automatically (no user prompt needed)
+5. If goal met: loop stops, success reported
+6. If turn limit reached: loop stops, current state reported
+
+## Verification methods
+
+**gate** (shell command):
+- Goal is met when command exits 0
+- Best for objective verification (tests, curl, file checks)
+- Example: `npm test`, `curl -f URL`, `grep -q "pattern" file`
+
+**self-report** (agent declaration):
+- Goal is met when agent outputs "GOAL_STATUS: MET"
+- Agent must explicitly declare goal completion
+- Use when verification requires judgment
+
+**hybrid** (both):
+- Goal is met when BOTH gate passes AND agent confirms
+- Most reliable for complex goals
+- Combines objective verification with agent validation
+
+## Parameters
+
+- **criteria**: Description of goal (required)
+- **gate**: Shell command for verification (required for gate/hybrid)
+- **maxTurns**: Maximum turns before timeout (default: 10)
+- **evaluator**: Verification method - "gate", "self-report", or "hybrid" (default: "gate" if gate provided)
+
+## Related commands
+
+- `goal_status()` - Check current goal progress
+- `goal_stop()` - Cancel active goal loop
+
+## Important notes
+
+- Only ONE goal can be active at a time
+- Goal loop continues automatically - DO NOT manually retry or re-prompt
+- Agent will be notified of verification results after each turn
+- Turn count includes both agent turns and verification checks
+- Goal state persists across session (survives interrupts)
+
+## Example usage
+
+Set goal:
+```
+goal("make all tests pass", {
+  gate: "npm test",
+  maxTurns: 15
+})
+```
+
+Agent will:
+1. Analyze failing tests
+2. Fix issues
+3. [Automatic verification: npm test]
+4. If still failing: continue fixing
+5. If passing: stop and report success
+6. Repeat until tests pass or 15 turns reached
+
+The agent does NOT need to manually run `npm test` or check status - verification happens automatically.
