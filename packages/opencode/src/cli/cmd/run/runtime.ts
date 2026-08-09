@@ -362,6 +362,76 @@ async function runInteractiveRuntime(input: RunRuntimeInput, deps: RunRuntimeDep
         sessionID,
       })
     },
+    onSubagentKill: async (sessionID: string) => {
+      if (!hasSession(input, state)) return
+      try {
+        // Use text prompt to trigger tool call
+        await ctx.sdk.session.prompt({
+          sessionID: state.sessionID,
+          parts: [
+            {
+              type: "text",
+              text: `task_cancel("${sessionID}", "User cancelled from footer")`,
+            },
+          ],
+        })
+        footer.event({
+          type: "stream.patch",
+          patch: { status: "Subagent cancelled" },
+        })
+      } catch (error) {
+        footer.event({
+          type: "stream.patch",
+          patch: { status: "Failed to cancel subagent" },
+        })
+      }
+    },
+    onSubagentSteer: async (sessionID: string, message: string) => {
+      if (!hasSession(input, state)) return
+      try {
+        await ctx.sdk.session.prompt({
+          sessionID: state.sessionID,
+          parts: [
+            {
+              type: "text",
+              text: `task_steer("${sessionID}", "${message.replace(/"/g, '\\"')}")`,
+            },
+          ],
+        })
+        footer.event({
+          type: "stream.patch",
+          patch: { status: "Guidance sent to subagent" },
+        })
+      } catch (error) {
+        footer.event({
+          type: "stream.patch",
+          patch: { status: "Failed to send guidance" },
+        })
+      }
+    },
+    onSubagentRefresh: async (sessionID: string) => {
+      if (!hasSession(input, state)) return
+      try {
+        await ctx.sdk.session.prompt({
+          sessionID: state.sessionID,
+          parts: [
+            {
+              type: "text",
+              text: `task_status("${sessionID}")`,
+            },
+          ],
+        })
+        footer.event({
+          type: "stream.patch",
+          patch: { status: "Status refreshed" },
+        })
+      } catch (error) {
+        footer.event({
+          type: "stream.patch",
+          patch: { status: "Failed to refresh status" },
+        })
+      }
+    },
   })
   const footer = shell.footer
   const rememberLocal = (commit: StreamCommit, after?: LocalReplayAnchor) => {

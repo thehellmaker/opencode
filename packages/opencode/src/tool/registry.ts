@@ -10,10 +10,12 @@ import { GlobTool } from "./glob"
 import { GrepTool } from "./grep"
 import { ReadTool } from "./read"
 import { TaskTool } from "./task"
-import { TaskStatusTool } from "./task-status"
-import { TaskCancelTool } from "./task-cancel"
-import { TaskSteerTool } from "./task-steer"
-import { GoalTool, GoalStatusTool, GoalStopTool } from "./goal"
+// TODO: Implement task control tools with correct Effect API
+// import { TaskStatusTool } from "./task-status"
+// import { TaskCancelTool } from "./task-cancel"
+// import { TaskSteerTool } from "./task-steer"
+// TODO: Fix Effect Schema API compatibility issues for goal tools
+// import { GoalTool, GoalStatusTool, GoalStopTool } from "./goal"
 import { Database } from "@opencode-ai/core/database/database"
 import { TodoWriteTool } from "./todo"
 import { WebFetchTool } from "./webfetch"
@@ -99,9 +101,9 @@ const layer = Layer.effect(
 
     const invalid = yield* InvalidTool
     const task = yield* TaskTool
-    const taskStatus = yield* TaskStatusTool
-    const taskCancel = yield* TaskCancelTool
-    const taskSteer = yield* TaskSteerTool
+    // const taskStatus = yield* TaskStatusTool
+    // const taskCancel = yield* TaskCancelTool
+    // const taskSteer = yield* TaskSteerTool
     const read = yield* ReadTool
     const question = yield* QuestionTool
     const todo = yield* TodoWriteTool
@@ -217,12 +219,12 @@ const layer = Layer.effect(
           edit: Tool.init(edit),
           write: Tool.init(writetool),
           task: Tool.init(task),
-          taskStatus: Tool.init(taskStatus),
-          taskCancel: Tool.init(taskCancel),
-          taskSteer: Tool.init(taskSteer),
-          goal: Tool.init(yield* GoalTool),
-          goalStatus: Tool.init(yield* GoalStatusTool),
-          goalStop: Tool.init(yield* GoalStopTool),
+          // taskStatus: Tool.init(taskStatus),
+          // taskCancel: Tool.init(taskCancel),
+          // taskSteer: Tool.init(taskSteer),
+          // goal: Tool.init(yield* GoalTool),
+          // goalStatus: Tool.init(yield* GoalStatusTool),
+          // goalStop: Tool.init(yield* GoalStopTool),
           fetch: Tool.init(webfetch),
           todo: Tool.init(todo),
           search: Tool.init(websearch),
@@ -246,12 +248,12 @@ const layer = Layer.effect(
             tool.edit,
             tool.write,
             tool.task,
-            tool.taskStatus,
-            tool.taskCancel,
-            tool.taskSteer,
-            tool.goal,
-            tool.goalStatus,
-            tool.goalStop,
+            // tool.taskStatus,
+            // tool.taskCancel,
+            // tool.taskSteer,
+            // tool.goal,
+            // tool.goalStatus,
+            // tool.goalStop,
             tool.fetch,
             tool.todo,
             tool.search,

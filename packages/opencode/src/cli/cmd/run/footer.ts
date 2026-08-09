@@ -97,6 +97,9 @@ type RunFooterOptions = {
   onEditorOpen: (input: { value: string }) => Promise<string | undefined>
   onExit?: () => void
   onSubagentSelect?: (sessionID: string | undefined) => void
+  onSubagentKill?: (sessionID: string) => void | Promise<void>
+  onSubagentSteer?: (sessionID: string, message: string) => void | Promise<void>
+  onSubagentRefresh?: (sessionID: string) => void | Promise<void>
   treeSitterClient?: TreeSitterClient
 }
 
@@ -469,6 +472,33 @@ export class RunFooter implements FooterApi {
 
       this.setSubagent(next.state)
       this.applyHeight()
+      return
+    }
+
+    if (next.type === "subagent.kill") {
+      if (this.isGone) {
+        return
+      }
+
+      void Promise.resolve(this.options.onSubagentKill?.(next.sessionID)).catch(() => {})
+      return
+    }
+
+    if (next.type === "subagent.steer") {
+      if (this.isGone) {
+        return
+      }
+
+      void Promise.resolve(this.options.onSubagentSteer?.(next.sessionID, next.message)).catch(() => {})
+      return
+    }
+
+    if (next.type === "subagent.refresh") {
+      if (this.isGone) {
+        return
+      }
+
+      void Promise.resolve(this.options.onSubagentRefresh?.(next.sessionID)).catch(() => {})
       return
     }
 
