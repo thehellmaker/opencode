@@ -341,6 +341,9 @@ export class RunFooter implements FooterApi {
               onLayout: footer.syncLayout,
               onStatus: footer.setStatus,
               onSubagentSelect: options.onSubagentSelect,
+              onSubagentKill: footer.handleSubagentKill,
+              onSubagentSteer: footer.handleSubagentSteer,
+              onSubagentRefresh: footer.handleSubagentRefresh,
               onQueuedRemove: footer.handleQueuedRemove,
             })
           },
@@ -679,6 +682,29 @@ export class RunFooter implements FooterApi {
   private handleQueuedRemove = async (messageID: string): Promise<boolean> => {
     const fn = [...this.queuedRemoves][0]
     return fn ? await fn(messageID) : false
+  }
+
+  private handleSubagentKill = (sessionID: string): void => {
+    this.event({
+      type: "subagent.kill",
+      sessionID,
+      reason: "User cancelled from footer",
+    })
+  }
+
+  private handleSubagentSteer = (sessionID: string, message: string): void => {
+    this.event({
+      type: "subagent.steer",
+      sessionID,
+      message,
+    })
+  }
+
+  private handleSubagentRefresh = (sessionID: string): void => {
+    this.event({
+      type: "subagent.refresh",
+      sessionID,
+    })
   }
 
   private handleInputClear = (): void => {

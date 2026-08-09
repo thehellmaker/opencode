@@ -279,6 +279,20 @@ export type FooterEvent =
       type: "stream.subagent"
       state: FooterSubagentState
     }
+  | {
+      type: "subagent.kill"
+      sessionID: string
+      reason?: string
+    }
+  | {
+      type: "subagent.steer"
+      sessionID: string
+      message: string
+    }
+  | {
+      type: "subagent.refresh"
+      sessionID: string
+    }
 
 export type PermissionReply = Parameters<OpencodeClient["permission"]["reply"]>[0]
 

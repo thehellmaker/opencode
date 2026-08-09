@@ -2,7 +2,7 @@
 import type { ScrollBoxRenderable } from "@opentui/core"
 import { useKeyboard } from "@opentui/solid"
 import { registerOpencodeSpinner } from "@opencode-ai/tui/component/register-spinner"
-import { Show, createMemo, indexArray } from "solid-js"
+import { Show, createMemo, createSignal, indexArray } from "solid-js"
 import { SPINNER_FRAMES } from "@opencode-ai/tui/component/spinner"
 import { RunEntryContent, separatorRows } from "./scrollback.writer"
 import type { FooterSubagentDetail, FooterSubagentTab, RunDiffStyle } from "./types"
@@ -55,6 +55,9 @@ export function RunFooterSubagentBody(props: {
   diffStyle?: RunDiffStyle
   onCycle: (dir: -1 | 1) => void
   onClose: () => void
+  onKill?: (sessionID: string) => void
+  onSteer?: (sessionID: string, message: string) => void
+  onRefresh?: (sessionID: string) => void
 }) {
   const theme = createMemo(() => props.theme())
   const footer = createMemo(() => theme().footer)
@@ -91,11 +94,54 @@ export function RunFooterSubagentBody(props: {
   ))
   let scroll: ScrollBoxRenderable | undefined
 
+  // Steer mode state
+  const [steerMode, setSteerMode] = createSignal(false)
+  const [steerMessage, setSteerMessage] = createSignal("")
+
   useKeyboard((event) => {
     if (!props.active()) {
       return
     }
 
+    const currentTab = tab()
+
+    // Steer mode active - handle text input
+    if (steerMode()) {
+      if (event.name === "return") {
+        event.preventDefault()
+        const msg = steerMessage().trim()
+        if (msg && currentTab && props.onSteer) {
+          props.onSteer(currentTab.sessionID, msg)
+          setSteerMessage("")
+          setSteerMode(false)
+        }
+        return
+      }
+
+      if (event.name === "escape") {
+        event.preventDefault()
+        setSteerMessage("")
+        setSteerMode(false)
+        return
+      }
+
+      // Allow typing in steer mode
+      if (event.name && event.name.length === 1 && !event.ctrl && !event.meta) {
+        event.preventDefault()
+        setSteerMessage((prev) => prev + event.name)
+        return
+      }
+
+      if (event.name === "backspace") {
+        event.preventDefault()
+        setSteerMessage((prev) => prev.slice(0, -1))
+        return
+      }
+
+      return
+    }
+
+    // Normal mode - handle controls
     if (event.name === "escape") {
       event.preventDefault()
       props.onClose()
@@ -105,6 +151,27 @@ export function RunFooterSubagentBody(props: {
     if (event.name === "tab" && !event.shift) {
       event.preventDefault()
       props.onCycle(1)
+      return
+    }
+
+    // Kill subagent
+    if ((event.name === "x" || (event.name === "c" && event.ctrl)) && currentTab && props.onKill) {
+      event.preventDefault()
+      props.onKill(currentTab.sessionID)
+      return
+    }
+
+    // Steer subagent (only if running)
+    if (event.name === "s" && currentTab && currentTab.status === "running" && props.onSteer) {
+      event.preventDefault()
+      setSteerMode(true)
+      return
+    }
+
+    // Refresh status
+    if (event.name === "r" && currentTab && props.onRefresh) {
+      event.preventDefault()
+      props.onRefresh(currentTab.sessionID)
       return
     }
 
@@ -118,6 +185,32 @@ export function RunFooterSubagentBody(props: {
       event.preventDefault()
       scroll?.scrollBy(1)
     }
+  })
+
+  // Help text with available actions
+  const helpText = createMemo(() => {
+    if (steerMode()) {
+      return "Enter: send │ Esc: cancel"
+    }
+
+    const current = tab()
+    const actions: string[] = []
+
+    if (current) {
+      if (current.status === "running") {
+        actions.push("x: kill", "s: steer", "r: refresh")
+      } else {
+        actions.push("r: refresh")
+      }
+    }
+
+    if (props.total() > 1) {
+      actions.push("Tab: cycle")
+    }
+
+    actions.push("Esc: close")
+
+    return actions.join(" │ ")
   })
 
   return (
@@ -169,6 +262,20 @@ export function RunFooterSubagentBody(props: {
             )}
           </box>
         </scrollbox>
+        <Show when={steerMode()}>
+          <box width="100%" paddingTop={1} flexShrink={0}>
+            <text fg={footer().text}>
+              <span style={{ fg: footer().muted }}>Steer message: </span>
+              {steerMessage()}
+              <span style={{ fg: footer().highlight }}>▊</span>
+            </text>
+          </box>
+        </Show>
+        <box width="100%" paddingTop={1} flexShrink={0}>
+          <text fg={footer().muted} wrapMode="none" truncate>
+            {helpText()}
+          </text>
+        </box>
       </box>
     </box>
   )
