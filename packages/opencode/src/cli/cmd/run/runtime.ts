@@ -340,6 +340,7 @@ async function runInteractiveRuntime(input: RunRuntimeInput, deps: RunRuntimeDep
     },
     onCancel: () => {
       // First escape: Cancel current turn only, queue continues
+      console.log('[DEBUG] onCancel called, queueControl:', state.queueControl ? 'exists' : 'undefined')
       state.queueControl?.cancelCurrent()
     },
     onInterrupt: () => {
@@ -726,6 +727,12 @@ async function runInteractiveRuntime(input: RunRuntimeInput, deps: RunRuntimeDep
             },
             signal,
           })
+
+          // Check if aborted after turn completes
+          if (signal.aborted) {
+            throw new DOMException("Aborted", "AbortError")
+          }
+
           if (prompt.messageID) {
             state.localRows = state.localRows.filter(
               (row) => row.commit.kind !== "user" || row.commit.messageID !== prompt.messageID,

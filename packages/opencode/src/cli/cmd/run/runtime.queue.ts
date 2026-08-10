@@ -100,6 +100,7 @@ export async function runPromptQueue(input: QueueInput): Promise<void> {
 
   const cancelCurrent = () => {
     // Cancel only the current turn, queue continues
+    console.log('[DEBUG] cancelCurrent called, ctrl:', state.ctrl ? 'exists' : 'undefined')
     state.ctrl?.abort()
   }
 
