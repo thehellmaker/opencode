@@ -728,7 +728,7 @@ async function runInteractiveRuntime(input: RunRuntimeInput, deps: RunRuntimeDep
             signal,
           })
 
-          // Check if aborted after turn completes
+          // runPromptTurn returns silently when aborted, throw AbortError for queue
           if (signal.aborted) {
             throw new DOMException("Aborted", "AbortError")
           }
