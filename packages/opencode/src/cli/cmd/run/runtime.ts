@@ -737,6 +737,10 @@ async function runInteractiveRuntime(input: RunRuntimeInput, deps: RunRuntimeDep
           includeFiles = false
         } catch (error) {
           if (signal.aborted || footer.isClosed) {
+            // Throw AbortError so queue can handle it as cancellation
+            if (signal.aborted) {
+              throw new DOMException("Aborted", "AbortError")
+            }
             return
           }
 
