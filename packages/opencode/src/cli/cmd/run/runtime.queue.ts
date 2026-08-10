@@ -211,13 +211,37 @@ export async function runPromptQueue(input: QueueInput): Promise<void> {
 
             const task = input.run(sent, ctrl.signal).then(
               () => ({ type: "done" as const }),
-              (error) => ({ type: "error" as const, error }),
+              (error) => {
+                // Check if this is an abort error (user pressed escape)
+                if (error instanceof DOMException && error.name === "AbortError") {
+                  return { type: "cancelled" as const }
+                }
+                return { type: "error" as const, error }
+              },
             )
 
             const next = await Promise.race([task, stop.promise])
             if (next.type === "closed") {
               ctrl.abort()
               break
+            }
+
+            if (next.type === "cancelled") {
+              // User cancelled with escape - mark as cancelled and continue to next message
+              if (sent.mode !== "shell") {
+                const commit = {
+                  kind: "assistant",
+                  text: "",
+                  phase: "end",
+                  source: "system",
+                  messageID: sent.messageID,
+                  status: "cancelled",
+                } as const
+                input.trace?.write("ui.commit", commit)
+                input.footer.append(commit)
+              }
+              // Continue to next queued message immediately
+              continue
             }
 
             if (next.type === "error") {
