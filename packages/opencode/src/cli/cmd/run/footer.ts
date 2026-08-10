@@ -92,6 +92,7 @@ type RunFooterOptions = {
   onCycleVariant?: () => CycleResult | void
   onModelSelect?: (model: NonNullable<RunInput["model"]>) => CycleResult | void | Promise<CycleResult | void>
   onVariantSelect?: (variant: string | undefined) => CycleResult | void | Promise<CycleResult | void>
+  onCancel?: () => void
   onInterrupt?: () => void
   onBackground?: () => void
   onEditorOpen: (input: { value: string }) => Promise<string | undefined>
@@ -1017,9 +1018,8 @@ export class RunFooter implements FooterApi {
     }, 5000)
   }
 
-  // Two-press interrupt: first press shows a hint ("esc again to interrupt"),
-  // second press within 5 seconds fires onInterrupt. The timer resets the
-  // counter if the user doesn't follow through.
+  // Two-press interrupt: first press cancels current turn (continues queue),
+  // second press within 5 seconds aborts everything (clears queue).
   private handleInterrupt = (): boolean => {
     if (this.isClosed || this.state().phase !== "running") {
       return false
@@ -1029,10 +1029,13 @@ export class RunFooter implements FooterApi {
     this.patch({ interrupt: next })
 
     if (next < 2) {
+      // First press: cancel current turn gracefully, queue continues
       this.armInterruptTimer()
+      this.options.onCancel?.()
       return true
     }
 
+    // Second press: abort everything, clear queue
     this.clearInterruptTimer()
     this.patch({ interrupt: 0 })
     this.setNotice("interrupting")

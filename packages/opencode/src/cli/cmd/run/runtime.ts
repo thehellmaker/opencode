@@ -134,6 +134,7 @@ type RuntimeState = {
   selectSubagent?: (sessionID: string | undefined) => void
   session?: Promise<void>
   stream?: Promise<StreamState>
+  queueControl?: { cancelCurrent: () => void; clearQueue: () => void }
 }
 
 function hasSession(input: RunRuntimeInput, state: RuntimeState) {
@@ -337,20 +338,13 @@ async function runInteractiveRuntime(input: RunRuntimeInput, deps: RunRuntimeDep
         variants: state.variants,
       }
     },
+    onCancel: () => {
+      // First escape: Cancel current turn only, queue continues
+      state.queueControl?.cancelCurrent()
+    },
     onInterrupt: () => {
-      if (!hasSession(input, state) || state.aborting) {
-        return
-      }
-
-      state.aborting = true
-      void ctx.sdk.session
-        .abort({
-          sessionID: state.sessionID,
-        })
-        .catch(() => {})
-        .finally(() => {
-          state.aborting = false
-        })
+      // Second escape: Abort everything, clear queue
+      state.queueControl?.clearQueue()
     },
     onBackground: () => {
       if (!hasSession(input, state)) return
@@ -616,6 +610,9 @@ async function runInteractiveRuntime(input: RunRuntimeInput, deps: RunRuntimeDep
       footer,
       initialInput: input.initialInput,
       trace: log,
+      onQueueReady: (api) => {
+        state.queueControl = api
+      },
       onSend: (prompt) => {
         state.shown = true
         state.history.push(prompt)

@@ -30,6 +30,7 @@ export type QueueInput = {
   onSend?: (prompt: RunPrompt) => void
   onNewSession?: () => void | Promise<void>
   run: (prompt: RunPrompt, signal: AbortSignal) => Promise<void>
+  onQueueReady?: (api: { cancelCurrent: () => void; clearQueue: () => void }) => void
 }
 
 type State = {
@@ -95,6 +96,16 @@ export async function runPromptQueue(input: QueueInput): Promise<void> {
     }
 
     done.resolve()
+  }
+
+  const cancelCurrent = () => {
+    // Cancel only the current turn, queue continues
+    state.ctrl?.abort()
+  }
+
+  const clearQueue = () => {
+    // Clear entire queue and stop processing
+    close()
   }
 
   const close = () => {
@@ -351,6 +362,9 @@ export async function runPromptQueue(input: QueueInput): Promise<void> {
     removeLocalQueued(queued)
     return true
   })
+
+  // Expose queue control API
+  input.onQueueReady?.({ cancelCurrent, clearQueue })
 
   try {
     if (state.closed) {
